@@ -36,20 +36,23 @@ class PathfindingApp:
         
         self.draw_grid()
         
-        self.algorithm_menu = tk.OptionMenu(root, tk.StringVar(value=self.algorithm), "A*", "Dijkstra", command=self.set_algorithm)
-        self.algorithm_menu.pack()
+        button_frame = tk.Frame(root)
+        button_frame.pack(pady=10)
+
+        self.algorithm_menu = tk.OptionMenu(button_frame, tk.StringVar(value=self.algorithm), "A*", "Dijkstra", command=self.set_algorithm)
+        self.algorithm_menu.pack(side=tk.LEFT, padx=5)
         
-        self.terrain_menu = tk.OptionMenu(root, tk.StringVar(value=self.selected_terrain), "grass", "water", "wall", "air", command=self.set_terrain)
-        self.terrain_menu.pack()
+        self.terrain_menu = tk.OptionMenu(button_frame, tk.StringVar(value=self.selected_terrain), "grass", "water", "wall", "air", command=self.set_terrain)
+        self.terrain_menu.pack(side=tk.LEFT, padx=5)
         
-        self.find_button = tk.Button(root, text="Find Path", command=self.find_path)
-        self.find_button.pack()
+        self.find_button = tk.Button(button_frame, text="Find Path", command=self.find_path)
+        self.find_button.pack(side=tk.LEFT, padx=5)
         
-        self.clear_button = tk.Button(root, text="Clear Selection", command=self.clear_selection)
-        self.clear_button.pack()
+        self.clear_button = tk.Button(button_frame, text="Clear Selection", command=self.clear_selection)
+        self.clear_button.pack(side=tk.LEFT, padx=5)
         
-        self.fill_grass_button = tk.Button(root, text="Fill Grid with Grass", command=self.fill_with_grass)
-        self.fill_grass_button.pack()
+        self.fill_grass_button = tk.Button(button_frame, text="Fill Grid with Grass", command=self.fill_with_grass)
+        self.fill_grass_button.pack(side=tk.LEFT, padx=5)
         
     def draw_grid(self):
         self.canvas.delete("all")
