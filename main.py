@@ -45,14 +45,13 @@ def find_path(grid, start, goal, algorithm="A*"):
     # Reconstrucción del camino
     path = []
     current = goal
-    while current != start:
-        if current in came_from:
-            path.append(current)
-            current = came_from[current]
-        else:
-            return []  # No hay camino
-    path.reverse()
-    return path
+    while current and current != start:
+        path.append(current)
+        current = came_from.get(current)
+    if current == start:
+        path.reverse()
+        return path
+    return []
 
 class PathfindingApp:
     def __init__(self, root):
@@ -62,6 +61,7 @@ class PathfindingApp:
         self.start = None
         self.goal = None
         self.algorithm = "A*"
+        self.selected_terrain = "grass"
         
         self.canvas = tk.Canvas(root, width=GRID_SIZE * CELL_SIZE, height=GRID_SIZE * CELL_SIZE)
         self.canvas.pack()
@@ -72,8 +72,14 @@ class PathfindingApp:
         self.algorithm_menu = tk.OptionMenu(root, tk.StringVar(value=self.algorithm), "A*", "Dijkstra", command=self.set_algorithm)
         self.algorithm_menu.pack()
         
+        self.terrain_menu = tk.OptionMenu(root, tk.StringVar(value=self.selected_terrain), "grass", "water", "wall", command=self.set_terrain)
+        self.terrain_menu.pack()
+        
         self.find_button = tk.Button(root, text="Find Path", command=self.find_path)
         self.find_button.pack()
+        
+        self.clear_button = tk.Button(root, text="Clear Selection", command=self.clear_selection)
+        self.clear_button.pack()
         
     def draw_grid(self):
         self.canvas.delete("all")
@@ -84,20 +90,36 @@ class PathfindingApp:
                     color = "yellow"
                 elif (i, j) == self.goal:
                     color = "red"
+                elif self.grid[i][j] == TERRAIN["water"]["weight"]:
+                    color = "blue"
+                elif self.grid[i][j] == TERRAIN["wall"]["weight"]:
+                    color = "black"
                 self.canvas.create_rectangle(j * CELL_SIZE, i * CELL_SIZE, (j+1) * CELL_SIZE, (i+1) * CELL_SIZE, fill=color, outline="white")
     
     def on_click(self, event):
         row, col = event.y // CELL_SIZE, event.x // CELL_SIZE
-        if not self.start:
+        if (row, col) == self.start:
+            self.start = None
+        elif (row, col) == self.goal:
+            self.goal = None
+        elif not self.start:
             self.start = (row, col)
         elif not self.goal:
             self.goal = (row, col)
-        else:
-            self.grid[row][col] = TERRAIN["water"]["weight"]  # Modificar terreno
+        elif (row, col) != self.start and (row, col) != self.goal:
+            self.grid[row][col] = TERRAIN[self.selected_terrain]["weight"]
         self.draw_grid()
     
     def set_algorithm(self, value):
         self.algorithm = value
+    
+    def set_terrain(self, value):
+        self.selected_terrain = value
+    
+    def clear_selection(self):
+        self.start = None
+        self.goal = None
+        self.draw_grid()
     
     def find_path(self):
         if not self.start or not self.goal:
