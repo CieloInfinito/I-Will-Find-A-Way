@@ -105,14 +105,14 @@ class PathfindingApp:
 
     def set_heuristic(self, value):
         self.heuristic_type = value
-        self.draw_grid()  # Refrescar visualmente
+        self.draw_grid()  
 
     def toggle_diagonal(self):
         if self.allow_diagonal.get():
             self.heuristic_type = "Euclidiana"
         else:
             self.heuristic_type = "Manhattan"
-        self.draw_grid()  # Actualizar el grid visualmente
+        self.draw_grid()  
 
     def set_terrain(self, value):
         self.selected_terrain = value
@@ -131,9 +131,7 @@ class PathfindingApp:
             messagebox.showerror("Error", "Debe seleccionar un punto de inicio y meta")
             return
 
-        # Restaurar el grid anterior antes de buscar un nuevo camino
-        self.grid = [row[:] for row in self.previous_grid]
-        self.draw_grid()
+
 
         path = self.calculate_path(self.grid, self.start, self.goal, self.algorithm)
         if path:
