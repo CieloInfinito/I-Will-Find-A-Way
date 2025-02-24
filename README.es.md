@@ -96,7 +96,7 @@ Las contribuciones son bienvenidas. Si deseas proponer mejoras, nuevas funcional
 
 ## Licencia
 
-Este proyecto se distribuye bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto se distribuye bajo la Licencia MIT. Consulta el archivo [LICENSE](https://opensource.org/licenses/MIT) para más detalles.
 
 ---
 
