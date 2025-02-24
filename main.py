@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import heapq
 import numpy as np
+import time
 
 # Configuración de colores y pesos
 TERRAIN = {
@@ -14,8 +15,9 @@ TERRAIN = {
     "goal": {"color": "red", "weight": 0}
 }
 
-GRID_SIZE = 10  # Tamaño de la cuadrícula
-CELL_SIZE = 50  # Tamaño de cada celda en píxeles
+GRID_SIZE = 10   # Tamaño de la cuadrícula
+CELL_SIZE = 50   # Tamaño de cada celda en píxeles
+DELAY = 0.1      # Retraso en segundos para visualizar la búsqueda
 
 def heuristic_manhattan(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -28,11 +30,10 @@ class PathfindingApp:
         self.root = root
         self.root.title("I Will Find a Way")
         self.grid = [[TERRAIN["grass"]["weight"] for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
-        self.previous_grid = [row[:] for row in self.grid]  # Para restaurar el estado anterior
         self.start = None
         self.goal = None
         self.algorithm = "A*"
-        self.heuristic_type = "Manhattan"
+        self.heuristic_type = "Manhattan"  # Seleccionada inicialmente
         self.allow_diagonal = tk.BooleanVar(value=False)
         self.selected_terrain = "grass"
 
@@ -73,18 +74,26 @@ class PathfindingApp:
         self.canvas.delete("all")
         for i in range(GRID_SIZE):
             for j in range(GRID_SIZE):
-                color = "green"
+                color = TERRAIN["grass"]["color"]
                 if (i, j) == self.start:
-                    color = "yellow"
+                    color = TERRAIN["start"]["color"]
                 elif (i, j) == self.goal:
-                    color = "red"
+                    color = TERRAIN["goal"]["color"]
                 elif self.grid[i][j] == TERRAIN["water"]["weight"]:
-                    color = "blue"
+                    color = TERRAIN["water"]["color"]
                 elif self.grid[i][j] == TERRAIN["wall"]["weight"]:
-                    color = "black"
+                    color = TERRAIN["wall"]["color"]
                 elif self.grid[i][j] == TERRAIN["air"]["weight"]:
-                    color = "white"
-                self.canvas.create_rectangle(j * CELL_SIZE, i * CELL_SIZE, (j+1) * CELL_SIZE, (i+1) * CELL_SIZE, fill=color, outline="white")
+                    color = TERRAIN["air"]["color"]
+                self.canvas.create_rectangle(j * CELL_SIZE, i * CELL_SIZE,
+                                             (j+1) * CELL_SIZE, (i+1) * CELL_SIZE,
+                                             fill=color, outline="white")
+    
+    def draw_cell(self, cell, color):
+        i, j = cell
+        self.canvas.create_rectangle(j * CELL_SIZE, i * CELL_SIZE,
+                                     (j+1) * CELL_SIZE, (i+1) * CELL_SIZE,
+                                     fill=color, outline="white")
 
     def on_click(self, event):
         row, col = event.y // CELL_SIZE, event.x // CELL_SIZE
@@ -108,10 +117,7 @@ class PathfindingApp:
         self.draw_grid()  
 
     def toggle_diagonal(self):
-        if self.allow_diagonal.get():
-            self.heuristic_type = "Euclidiana"
-        else:
-            self.heuristic_type = "Manhattan"
+        # Ahora solo actualizamos la visualización sin modificar la heurística
         self.draw_grid()  
 
     def set_terrain(self, value):
@@ -131,12 +137,14 @@ class PathfindingApp:
             messagebox.showerror("Error", "Debe seleccionar un punto de inicio y meta")
             return
 
-
-
+        self.draw_grid()
         path = self.calculate_path(self.grid, self.start, self.goal, self.algorithm)
         if path:
-            for row, col in path[:-1]:  # Omitir la casilla final
-                self.canvas.create_rectangle(col * CELL_SIZE, row * CELL_SIZE, (col+1) * CELL_SIZE, (row+1) * CELL_SIZE, fill="orange", outline="white")
+            for row, col in path[:-1]:
+                self.canvas.create_rectangle(col * CELL_SIZE, row * CELL_SIZE,
+                                             (col+1) * CELL_SIZE, (row+1) * CELL_SIZE,
+                                             fill=TERRAIN["path"]["color"], outline="white")
+            self.canvas.update()
         else:
             messagebox.showerror("Error", "No se encontró un camino")
 
@@ -146,17 +154,34 @@ class PathfindingApp:
         came_from = {start: None}
         cost_so_far = {start: 0}
 
+        # Selección de la función heurística según el menú
         if self.heuristic_type == "Manhattan":
             heuristic = heuristic_manhattan
-            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         else:
             heuristic = heuristic_euclidean
-            directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        
+        # Selección de direcciones basada en el checkbox (diagonales permitidas o no)
+        if self.allow_diagonal.get():
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1),
+                          (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        else:
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        # Para Dijkstra se ignora la heurística (equivalente a h(n)=0)
+        if algorithm == "Dijkstra":
+            effective_heuristic = lambda a, b: 0
+        else:
+            effective_heuristic = heuristic
 
         while frontier:
             _, current = heapq.heappop(frontier)
             if current == goal:
                 break
+
+            if current != start and current != goal:
+                self.draw_cell(current, "light gray")
+                self.canvas.update()
+                time.sleep(DELAY)
 
             x, y = current
             for dx, dy in directions:
@@ -165,8 +190,13 @@ class PathfindingApp:
                     new_cost = cost_so_far[current] + grid[neighbor[0]][neighbor[1]]
                     if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                         cost_so_far[neighbor] = new_cost
-                        heapq.heappush(frontier, (new_cost + heuristic(neighbor, goal), neighbor))
+                        priority = new_cost + effective_heuristic(neighbor, goal)
+                        heapq.heappush(frontier, (priority, neighbor))
                         came_from[neighbor] = current
+                        if neighbor != start and neighbor != goal:
+                            self.draw_cell(neighbor, "cyan")
+            self.canvas.update()
+            time.sleep(DELAY)
 
         path = []
         current = goal
