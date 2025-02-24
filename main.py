@@ -4,6 +4,8 @@ import heapq
 import numpy as np
 import time
 from PIL import Image, ImageTk
+import os
+import sys
 
 # Configuración de colores y pesos
 TERRAIN = {
@@ -52,9 +54,18 @@ def heuristic_manhattan(a, b):
 def heuristic_euclidean(a, b):
     return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
-class PathfindingApp:
+def get_path(relative_path):
+    """ Devuelve la ruta correcta para archivos en el ejecutable """
+    if getattr(sys, 'frozen', False):  # Si está congelado en un .exe
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+class IWillFindAWayApp:
     def __init__(self, root):
         self.root = root
+        self.root.iconbitmap(get_path("icon.ico"))
         self.root.title("I Will Find a Way")
         self.grid = [[TERRAIN["grass"]["weight"] for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
         self.start = None
@@ -102,8 +113,10 @@ class PathfindingApp:
         self.language_frame = tk.Frame(root)
         self.language_frame.pack(pady=10)
 
-        self.flag_es = ImageTk.PhotoImage(Image.open("flag_es.png").resize((50, 30)))
-        self.flag_en = ImageTk.PhotoImage(Image.open("flag_en.png").resize((50, 30)))
+        flag_es_path = get_path("flag_es.png")
+        flag_en_path = get_path("flag_en.png")
+        self.flag_es = ImageTk.PhotoImage(Image.open(flag_es_path).resize((50, 30)))
+        self.flag_en = ImageTk.PhotoImage(Image.open(flag_en_path).resize((50, 30)))
 
         self.es_button = tk.Button(self.language_frame, image=self.flag_es, command=lambda: self.change_language("es"))
         self.es_button.pack(side=tk.LEFT, padx=5)
@@ -114,11 +127,20 @@ class PathfindingApp:
     def update_language(self):
         self.root.title(LANGUAGES[self.language]["title"])
 
+    def update_terrain_menu(self):
+        """ Actualiza el menú desplegable de terrenos al cambiar el idioma """
+        self.terrain_menu['menu'].delete(0, 'end')  # Borra opciones actuales
+        for label in self.get_terrain_labels():
+            self.terrain_menu['menu'].add_command(label=label, command=lambda value=label: self.set_terrain(value))
+        # Actualiza la selección actual traducida
+        self.terrain_var.set(LANGUAGES[self.language]["terrain"][self.selected_terrain])
+
     def update_texts(self):
         self.find_button.config(text=LANGUAGES[self.language]["find_path"])
         self.clear_button.config(text=LANGUAGES[self.language]["clear_selection"])
         self.fill_grass_button.config(text=LANGUAGES[self.language]["fill_grid"])
         self.diagonal_check.config(text=LANGUAGES[self.language]["allow_diagonal"])
+        self.update_terrain_menu()
 
     def change_language(self, lang):
         self.language = lang
@@ -268,5 +290,5 @@ class PathfindingApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = PathfindingApp(root)
+    app = IWillFindAWayApp(root)
     root.mainloop()
