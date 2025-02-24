@@ -3,6 +3,7 @@ from tkinter import messagebox
 import heapq
 import numpy as np
 import time
+from PIL import Image, ImageTk
 
 # Configuración de colores y pesos
 TERRAIN = {
@@ -13,6 +14,32 @@ TERRAIN = {
     "path": {"color": "orange", "weight": 0},
     "start": {"color": "yellow", "weight": 0},
     "goal": {"color": "red", "weight": 0}
+}
+
+# Configuración de idiomas
+LANGUAGES = {
+    "es": {
+        "title": "Encontraré un camino",
+        "find_path": "Encontrar camino",
+        "clear_selection": "Borrar selección",
+        "fill_grid": "Llenar la cuadrícula con hierba",
+        "allow_diagonal": "Permitir diagonales",
+        "error_title": "Error",
+        "error_message": "Debe seleccionar un punto de inicio y meta",
+        "no_path": "No se encontró un camino",
+        "terrain": {"grass": "Hierba", "water": "Agua", "wall": "Muro", "air": "Aire"}
+    },
+    "en": {
+        "title": "I Will Find a Way",
+        "find_path": "Find Path",
+        "clear_selection": "Clear Selection",
+        "fill_grid": "Fill Grid with Grass",
+        "allow_diagonal": "Allow Diagonals",
+        "error_title": "Error",
+        "error_message": "You must select a start and goal point",
+        "no_path": "No path found",
+        "terrain": {"grass": "Grass", "water": "Water", "wall": "Wall", "air": "Air"}
+    }
 }
 
 GRID_SIZE = 10   # Tamaño de la cuadrícula
@@ -36,7 +63,7 @@ class PathfindingApp:
         self.heuristic_type = "Manhattan"  # Seleccionada inicialmente
         self.allow_diagonal = tk.BooleanVar(value=False)
         self.selected_terrain = "grass"
-
+        self.language = "en"  # Idioma predeterminado
         self.canvas = tk.Canvas(root, width=GRID_SIZE * CELL_SIZE, height=GRID_SIZE * CELL_SIZE)
         self.canvas.pack()
         self.canvas.bind("<Button-1>", self.on_click)
@@ -52,10 +79,12 @@ class PathfindingApp:
         self.heuristic_menu = tk.OptionMenu(control_frame, tk.StringVar(value=self.heuristic_type), "Manhattan", "Euclidiana", command=self.set_heuristic)
         self.heuristic_menu.pack(side=tk.LEFT, padx=5)
 
-        self.diagonal_check = tk.Checkbutton(control_frame, text="Permitir diagonales", variable=self.allow_diagonal, command=self.toggle_diagonal)
+        self.diagonal_check = tk.Checkbutton(control_frame, text="Allow Diagonals", variable=self.allow_diagonal, command=self.toggle_diagonal)
         self.diagonal_check.pack(side=tk.LEFT, padx=5)
 
-        self.terrain_menu = tk.OptionMenu(control_frame, tk.StringVar(value=self.selected_terrain), "grass", "water", "wall", "air", command=self.set_terrain)
+        self.terrain_var = tk.StringVar()
+        self.terrain_var.set(LANGUAGES[self.language]["terrain"][self.selected_terrain])
+        self.terrain_menu = tk.OptionMenu(control_frame, self.terrain_var, *self.get_terrain_labels(), command=self.set_terrain)
         self.terrain_menu.pack(side=tk.LEFT, padx=5)
 
         button_frame = tk.Frame(root)
@@ -70,6 +99,41 @@ class PathfindingApp:
         self.fill_grass_button = tk.Button(button_frame, text="Fill Grid with Grass", command=self.fill_with_grass)
         self.fill_grass_button.pack(side=tk.LEFT, padx=5)
 
+        self.language_frame = tk.Frame(root)
+        self.language_frame.pack(pady=10)
+
+        self.flag_es = ImageTk.PhotoImage(Image.open("flag_es.png").resize((50, 30)))
+        self.flag_en = ImageTk.PhotoImage(Image.open("flag_en.png").resize((50, 30)))
+
+        self.es_button = tk.Button(self.language_frame, image=self.flag_es, command=lambda: self.change_language("es"))
+        self.es_button.pack(side=tk.LEFT, padx=5)
+        
+        self.en_button = tk.Button(self.language_frame, image=self.flag_en, command=lambda: self.change_language("en"))
+        self.en_button.pack(side=tk.LEFT, padx=5)
+
+    def update_language(self):
+        self.root.title(LANGUAGES[self.language]["title"])
+
+    def update_texts(self):
+        self.find_button.config(text=LANGUAGES[self.language]["find_path"])
+        self.clear_button.config(text=LANGUAGES[self.language]["clear_selection"])
+        self.fill_grass_button.config(text=LANGUAGES[self.language]["fill_grid"])
+        self.diagonal_check.config(text=LANGUAGES[self.language]["allow_diagonal"])
+
+    def change_language(self, lang):
+        self.language = lang
+        self.update_language()
+        self.update_texts()
+    
+    def set_terrain(self, value):
+        for key, label in LANGUAGES[self.language]["terrain"].items():
+            if label == value:
+                self.selected_terrain = key
+                break
+    
+    def get_terrain_labels(self):
+        return list(LANGUAGES[self.language]["terrain"].values())
+    
     def draw_grid(self):
         self.canvas.delete("all")
         for i in range(GRID_SIZE):
@@ -120,9 +184,6 @@ class PathfindingApp:
         # Ahora solo actualizamos la visualización sin modificar la heurística
         self.draw_grid()  
 
-    def set_terrain(self, value):
-        self.selected_terrain = value
-
     def clear_selection(self):
         self.start = None
         self.goal = None
@@ -134,7 +195,7 @@ class PathfindingApp:
 
     def find_path(self):
         if not self.start or not self.goal:
-            messagebox.showerror("Error", "Debe seleccionar un punto de inicio y meta")
+            messagebox.showerror(LANGUAGES[self.language]["error_title"], LANGUAGES[self.language]["error_message"])
             return
 
         self.draw_grid()
