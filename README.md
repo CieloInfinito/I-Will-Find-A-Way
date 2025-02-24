@@ -96,7 +96,7 @@ Contributions are welcome! If you'd like to suggest improvements, add features, 
 
 ## License
 
-This project is distributed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is distributed under the MIT License. See the [MIT License](https://opensource.org/licenses/MIT) for more details.
 
 ---
 
