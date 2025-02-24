@@ -1,7 +1,3 @@
-Below is an English version of the README file for GitHub:
-
----
-
 # I Will Find a Way
 
 A Python graphical application to visualize and compare the **A\*** and **Dijkstra** pathfinding algorithms in real time. This tool lets you experiment with different heuristic functions and movement configurations (with or without diagonals), making it a valuable resource for learning and analyzing these algorithms.
